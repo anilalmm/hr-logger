@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0f1115">
+<title>HR Logger</title>
+<style>
+  :root{--bg:#0f1115;--card:#1a1d24;--line:#2a2f3a;--fg:#e8eaf0;--mut:#8a90a0;--acc:#ff4d5e;--ok:#3ecf8e;--warn:#f5a623;
+        --z1:#5b8def;--z2:#3ecf8e;--z3:#e6c229;--z4:#f5a623;--z5:#ff4d5e}
+  *{box-sizing:border-box}
+  body{margin:0 auto;max-width:560px;padding:12px 16px 40px;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,sans-serif;font-size:15px}
+  header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  header h1{font-size:18px;margin:0;flex:1}
+  .pill{font-size:12px;padding:4px 10px;border-radius:99px;background:var(--line);color:var(--mut)}
+  .pill.ok{background:rgba(62,207,142,.15);color:var(--ok)} .pill.warn{background:rgba(245,166,35,.15);color:var(--warn)}
+  .card{background:var(--card);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+  .hidden{display:none!important}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .mut{color:var(--mut)} .small{font-size:12px}
+  label{display:block;font-size:12px;color:var(--mut);margin-top:10px}
+  input,select{width:100%;margin-top:4px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:15px}
+  button{padding:12px 14px;border:0;border-radius:12px;font-size:15px;font-weight:600;background:var(--acc);color:#fff;cursor:pointer}
+  button.sec{background:var(--card);color:var(--fg);border:1px solid var(--line)}
+  button.small{padding:8px 12px;font-size:13px}
+  button.big{width:100%;padding:15px;font-size:17px;margin-top:12px}
+  button.huge{width:100%;padding:24px;font-size:22px;margin-top:8px;background:var(--ok);color:#06140d}
+  button.link{background:none;color:var(--mut);padding:6px;font-weight:500}
+  button:disabled{opacity:.35}
+  .icon{background:var(--card);border:1px solid var(--line);padding:6px 10px;font-size:16px}
+  .tabs{display:flex;gap:6px;margin-bottom:10px}
+  .tabs button{flex:1;background:var(--card);color:var(--mut);border:1px solid var(--line);padding:10px 6px}
+  .tabs button.on{background:var(--fg);color:var(--bg)}
+  .banner{border-radius:12px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(91,141,239,.15);font-size:14px}
+  .banner.alert{background:rgba(255,77,94,.18);color:#ffb3ba;font-weight:600}
+  .hero{background:var(--card);border-radius:16px;padding:14px;text-align:center;margin-bottom:10px}
+  .bpm{font-size:92px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+  .zname{font-size:15px;color:var(--mut);margin-top:4px}
+  .zbar{display:flex;gap:4px;margin-top:10px}
+  .zbar i{flex:1;height:10px;border-radius:4px;background:var(--line);opacity:.5}
+  .zbar i.on{opacity:1}
+  .chart{width:100%;height:110px;display:block;margin-top:10px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+  .stat{background:var(--card);border-radius:12px;padding:9px 10px}
+  .stat b{display:block;font-size:19px;font-variant-numeric:tabular-nums}
+  .stat span{font-size:11px;color:var(--mut)}
+  .zt{display:grid;grid-template-columns:28px 1fr 48px;gap:6px 8px;align-items:center;font-size:12px}
+  .zt div.bar{height:8px;border-radius:4px}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+  th,td{padding:6px 4px;text-align:right;border-bottom:1px solid var(--line)} th{color:var(--mut);font-weight:500}
+  th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
+  .light{display:inline-block;padding:6px 14px;border-radius:99px;font-weight:700}
+  .light.Green{background:rgba(62,207,142,.2);color:var(--ok)} .light.Amber{background:rgba(245,166,35,.2);color:var(--warn)}
+  .light.Red{background:rgba(255,77,94,.2);color:var(--acc)} .light.Other{background:var(--line);color:var(--mut)}
+  .big-timer{font-size:56px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
+  .progress{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:8px}
+  .progress i{display:block;height:100%;background:var(--ok);width:0}
+  #settings h3{font-size:14px;margin:18px 0 0;color:var(--fg)}
+  .codebox{font-size:30px;font-weight:700;letter-spacing:4px;text-align:center;padding:8px;background:var(--bg);border-radius:10px;margin-top:8px}
+  pre{background:var(--card);border-radius:12px;padding:10px;font-size:11px;color:var(--mut);max-height:140px;overflow:auto;white-space:pre-wrap;margin:10px 0 0}
+  .foot{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-top:10px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>HR Logger</h1>
+  <span id="pill" class="pill">Not connected</span>
+  <button id="gear" class="icon" aria-label="Settings">⚙</button>
+</header>
+
+<div id="prompt" class="banner hidden">
+  <span style="flex:1">No resting reading today.</span>
+  <button id="promptGo" class="small">Take it now</button>
+  <button id="promptLater" class="link">Later</button>
+</div>
+<div id="alertBar" class="banner alert hidden"></div>
+
+<!-- ================= SETTINGS ================= -->
+<section id="settings" class="card hidden">
+  <div class="row"><b>Settings</b><button id="closeSettings" class="small sec">Done</button></div>
+
+  <h3>Connection</h3>
+  <label>Apps Script web app URL (/exec)<input id="c_url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec"></label>
+  <label>Write key (same as WRITE_KEY in Code.gs)<input id="c_key" autocomplete="off"></label>
+  <label>Upload interval (free log / resting)
+    <select id="c_interval"><option value="5">5 s</option><option value="10">10 s</option><option value="30">30 s</option></select>
+  </label>
+  <p class="small mut">Training always uploads every 3 s for the trainer's live view.</p>
+
+  <h3>Profile</h3>
+  <label>Age<input id="c_age" type="number" inputmode="numeric"></label>
+  <label>Sex<select id="c_sex"><option value="M">Male</option><option value="F">Female</option></select></label>
+  <label>Weight (kg)<input id="c_weight" type="number" inputmode="decimal"></label>
+
+  <h3>Heart rate</h3>
+  <p class="small mut" id="hrmaxInfo"></p>
+  <label>HRmax manual override (blank = learn automatically)<input id="c_hrmaxManual" type="number" inputmode="numeric"></label>
+  <label>Zone method
+    <select id="c_zoneMethod"><option value="pct">% of HRmax</option><option value="hrr">Heart-rate reserve (Karvonen)</option></select>
+  </label>
+  <label>HR ceiling alert (bpm, blank = off)<input id="c_ceiling" type="number" inputmode="numeric"></label>
+
+  <h3>Resting reading</h3>
+  <label>Position<select id="c_restPos"><option>Seated</option><option>Lying</option></select></label>
+  <label>Duration<select id="c_restDur"><option value="180">3 minutes</option><option value="300">5 minutes</option></select></label>
+
+  <h3>Cues</h3>
+  <label><input id="c_voice" type="checkbox" style="width:auto"> Voice (zone changes, alerts)</label>
+  <label><input id="c_vibrate" type="checkbox" style="width:auto"> Vibration</label>
+  <label><input id="c_sound" type="checkbox" style="width:auto"> Beeps</label>
+
+  <h3>Trainer access</h3>
+  <p class="small mut" id="codeStatus">Status unknown – set the URL and key first.</p>
+  <label>Access code (type your own or generate)
+    <div class="row"><input id="codeInput" autocomplete="off" inputmode="numeric" maxlength="32"><button id="codeGen" class="small sec">Generate</button></div>
+  </label>
+  <label>Valid for
+    <select id="codeHours">
+      <option value="1">1 hour</option><option value="3">3 hours</option><option value="12">12 hours</option>
+      <option value="24" selected>24 hours</option><option value="168">7 days</option><option value="custom">Custom…</option>
+    </select>
+  </label>
+  <input id="codeCustom" class="hidden" type="number" inputmode="decimal" placeholder="Hours, e.g. 48">
+  <button id="codeSet" class="big">Activate code</button>
+  <p class="small mut">Activating a new code immediately cancels the previous one.</p>
+  <div id="codeActive" class="hidden">
+    <div class="codebox" id="codeShow"></div>
+    <div class="row" style="margin-top:8px">
+      <button id="codeShareLink" class="small sec" style="flex:1">Share trainer link</button>
+      <button id="codeCopy" class="small sec" style="flex:1">Copy code</button>
+      <button id="codeRevoke" class="small" style="flex:1">Revoke now</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= STRAP ================= -->
+<section class="card">
+  <div class="row">
+    <div><b id="bpmSmall" style="font-size:22px">--</b> <span class="mut">bpm</span>
+      <div class="small mut">contact <span id="contact">--</span> · battery <span id="batt">--</span></div></div>
+    <button id="btnConnect" class="small">Connect strap</button>
+  </div>
+</section>
+
+<!-- ================= TODAY (always visible) ================= -->
+<section id="today" class="card"></section>
+
+<nav class="tabs">
+  <button data-tab="training" class="on">Training</button>
+  <button data-tab="resting">Resting</button>
+  <button data-tab="free">Free log</button>
+</nav>
+
+<!-- ================= TRAINING ================= -->
+<section id="tab-training" class="tab">
+  <div id="trIdle" class="card">
+    <label>Session type<select id="trType"><option>Strength</option><option>Cardio</option><option>Mixed</option></select></label>
+    <label>Label (optional)<input id="trLabel" placeholder="e.g. Legs, 5 km run"></label>
+    <button id="trStart" class="big">Start training</button>
+    <p class="small mut" id="zoneInfo"></p>
+  </div>
+
+  <div id="trLive" class="hidden">
+    <div class="hero">
+      <div id="trBpm" class="bpm">--</div>
+      <div id="trZone" class="zname">--</div>
+      <div class="zbar" id="zbar"><i style="background:var(--z1)"></i><i style="background:var(--z2)"></i><i style="background:var(--z3)"></i><i style="background:var(--z4)"></i><i style="background:var(--z5)"></i></div>
+      <canvas id="trChart" class="chart"></canvas>
+    </div>
+    <div class="grid3">
+      <div class="stat"><b id="sElapsed">0:00</b><span>Elapsed</span></div>
+      <div class="stat"><b id="sAvg">--</b><span>Avg HR</span></div>
+      <div class="stat"><b id="sMax">--</b><span>Max HR</span></div>
+      <div class="stat"><b id="sTrimp">0</b><span>TRIMP</span></div>
+      <div class="stat"><b id="sKcal">0</b><span>kcal</span></div>
+      <div class="stat"><b id="sSets">0</b><span>Sets</span></div>
+      <div class="stat"><b id="sHrv">--</b><span>HRV · RMSSD 60 s</span></div>
+      <div class="stat"><b id="sQual">--</b><span>Signal quality</span></div>
+      <div class="stat"><b id="sEct">0</b><span>Ectopic beats</span></div>
+    </div>
+    <div class="card"><div class="zt" id="zoneTimes"></div></div>
+    <div class="card">
+      <input id="setLabel" list="labelList" placeholder="Exercise (optional)"><datalist id="labelList"></datalist>
+      <button id="setDone" class="huge">SET DONE</button>
+      <table id="setTable"></table>
+    </div>
+    <button id="trEnd" class="sec big">End session</button>
+  </div>
+
+  <div id="trSummary" class="hidden"></div>
+</section>
+
+<!-- ================= RESTING ================= -->
+<section id="tab-resting" class="tab hidden">
+  <div id="rsIdle" class="card">
+    <p style="margin:0">Sit or lie still, breathe normally. <span class="mut" id="rsCfg"></span></p>
+    <button id="rsStart" class="big">Start resting reading</button>
+  </div>
+  <div id="rsRun" class="card hidden">
+    <div class="mut" id="rsPhase" style="text-align:center">Quiet rest</div>
+    <div class="big-timer" id="rsTimer">2:00</div>
+    <div class="progress"><i id="rsProg"></i></div>
+    <p style="text-align:center" class="mut">HR <b id="rsHr">--</b> · live RMSSD <b id="rsHrv">--</b> ms · stay still, don't talk</p>
+    <div class="row"><button id="rsSkip" class="small sec" style="flex:1">Skip quiet rest</button><button id="rsCancel" class="small sec" style="flex:1">Cancel</button></div>
+  </div>
+  <div id="rsResult" class="hidden"></div>
+</section>
+
+<!-- ================= FREE ================= -->
+<section id="tab-free" class="tab hidden">
+  <div class="hero">
+    <div id="frBpm" class="bpm">--</div>
+    <div class="zname" id="frInfo">Plain logging – every beat to Sheets</div>
+    <canvas id="frChart" class="chart"></canvas>
+  </div>
+  <button id="frStart" class="big">Start free log</button>
+  <button id="frStop" class="big sec hidden">Stop</button>
+</section>
+
+<div class="foot"><span>Sent <b id="fSent">0</b> · waiting <b id="fQueue">0</b></span><span id="fSync">–</span></div>
+<pre id="log"></pre>
+
+<script>
+// ==MATH START==
+/* ---------- RR artifact correction ---------- */
+class RRClean {
+  constructor(){ this.hist=[]; this.pending=null; this.bad=0; this.fix=0; this.out=0; this.flagged=0; this.ectopic=0; }
+  _rebase(rr){ this.hist=[rr]; this.bad=0; this.fix=0; this.pending=null; }
+  median(){ const a=this.hist.slice(-11).sort((x,y)=>x-y); return a[a.length>>1]; }
+  _acc(v,t,o,flag){ this.hist.push(v); if(this.hist.length>40)this.hist.shift(); o.push({t,nn:v,flag}); this.out++; if(flag)this.flagged++; }
+  push(rr,t){               // rr in ms, t = timestamp (ms) of the beat; returns [{t,nn,flag}] flag 0 ok,1 corrected,2 ectopic
+    const o=[];
+    if(!(rr>=250&&rr<=2500)) return o;                      // physiologically impossible: drop
+    if(this.hist.length<5){ this._acc(rr,t,o,0); return o; } // warm-up
+    const m=this.median();
+    if(this.pending){
+      const p=this.pending; this.pending=null; const sum=p.rr+rr;
+      if(sum>=0.8*m&&sum<=1.2*m){                                                               // extra (split) beat → merge
+        if(++this.fix>=4){ this._rebase(rr); this._acc(p.rr,p.t,o,0); this._acc(rr,t,o,0); return o; } // …unless it keeps happening: real HR jump
+        this._acc(sum,t,o,1); this.bad=0; return o; }
+      if(sum>=1.7*m&&sum<=2.3*m&&rr>1.05*m){ this.ectopic++; this._acc(sum/2,p.t,o,2); this._acc(sum/2,t,o,2); this.bad=0; return o; } // premature + compensatory pause
+      this._acc(m,p.t,o,1); this.bad++;                                                        // lone short beat → replace
+    }
+    const r=rr/m;
+    if(r>=0.8&&r<=1.2){ this._acc(rr,t,o,0); this.bad=0; this.fix=0; }
+    else if(r<0.8){ this.pending={rr,t}; }
+    else if(r>=1.7&&r<=2.3){                                                                     // missed beat → split
+      if(++this.fix>=4){ this._rebase(rr); this._acc(rr,t,o,0); return o; }
+      this._acc(rr/2,t-rr/2,o,1); this._acc(rr/2,t,o,1); this.bad=0; }
+    else { this._acc(m,t,o,1); this.bad++; }
+    if(this.bad>=5) this._rebase(rr);                                                            // genuine rhythm shift → re-baseline
+    return o;
+  }
+  quality(){ return this.out? 100*(1-this.flagged/this.out) : 100; }
+}
+
+/* ---------- HRV metrics ---------- */
+function mean(a){ return a.reduce((s,v)=>s+v,0)/a.length; }
+function sdev(a){ const m=mean(a); return Math.sqrt(a.reduce((s,v)=>s+(v-m)*(v-m),0)/(a.length-1)); }
+function hrvMetrics(nn){
+  if(nn.length<30) return null;
+  const d=[]; let c50=0;
+  for(let i=1;i<nn.length;i++){ const x=nn[i]-nn[i-1]; d.push(x); if(Math.abs(x)>50)c50++; }
+  const mnn=mean(nn), sdnn=sdev(nn), rmssd=Math.sqrt(mean(d.map(x=>x*x)));
+  const sdd=sdev(d), sd1=Math.sqrt(0.5)*sdd, sd2=Math.sqrt(Math.max(0,2*sdnn*sdnn-0.5*sdd*sdd));
+  return { meanNN:mnn, hr:60000/mnn, rmssd, lnrmssd:Math.log(rmssd), sdnn, pnn50:100*c50/d.length, sd1, sd2, beats:nn.length };
+}
+
+/* ---------- Zones, load, energy ---------- */
+const ZPCT=[0.5,0.6,0.7,0.8,0.9,1.0];
+function zoneBounds(hrmax,method,rhr){ return method==='hrr' ? ZPCT.map(p=>Math.round(rhr+p*(hrmax-rhr))) : ZPCT.map(p=>Math.round(p*hrmax)); }
+function zoneOf(hr,b){ if(hr<b[0]) return 0; for(let z=1;z<5;z++) if(hr<b[z]) return z; return 5; }
+function banisterRate(hr,rhr,hrmax,sex){           // TRIMP per minute
+  const x=Math.min(1,Math.max(0,(hr-rhr)/(hrmax-rhr)));
+  return sex==='F' ? x*0.86*Math.exp(1.67*x) : x*0.64*Math.exp(1.92*x);
+}
+function keytelKcalMin(hr,w,age,sex){               // Keytel 2005, kcal/min
+  const v= sex==='F' ? (-20.4022+0.4472*hr-0.1263*w+0.074*age)/4.184 : (-55.0969+0.6309*hr+0.1988*w+0.2017*age)/4.184;
+  return Math.max(0,v);
+}
+function uthVO2(hrmax,rhr){ return 15.3*hrmax/rhr; }
+function liveRMSSD(beats,now,win=60000){           // rolling HRV from cleaned beats [{t,nn,flag}]
+  const w=beats.filter(b=>b.t>=now-win);
+  if(w.length<20) return null;
+  const q=100*(1-w.filter(b=>b.flag).length/w.length);
+  if(q<90) return {rmssd:null,q};
+  let s=0; for(let i=1;i<w.length;i++){ const d=w[i].nn-w[i-1].nn; s+=d*d; }
+  return {rmssd:Math.sqrt(s/(w.length-1)),q};
+}
+function tanaka(age){ return age? Math.round(208-0.7*age) : 190; }
+// ==MATH END==
+
+/* =================== helpers =================== */
+const $=id=>document.getElementById(id);
+const LS={ get(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } },
+           set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} } };
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const fmt=(s)=>{ s=Math.max(0,Math.round(s)); const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60; return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0'); };
+const dayKey=(d=new Date())=>d.toLocaleDateString('sv-SE');
+const stamp=(d=new Date())=>d.toLocaleString('sv-SE').slice(0,16);
+const r1=v=>Math.round(v*10)/10, r2=v=>Math.round(v*100)/100;
+function log(m){ const el=$('log'); el.textContent=(new Date().toLocaleTimeString()+'  '+m+'\n'+el.textContent).slice(0,5000); }
+const ZCOL=['#8a90a0','#5b8def','#3ecf8e','#e6c229','#f5a623','#ff4d5e'];
+
+/* =================== config & state =================== */
+const cfg=Object.assign({url:'',key:'',interval:5,age:'',sex:'M',weight:'',hrmaxManual:'',zoneMethod:'pct',ceiling:'',
+  restPos:'Seated',restDur:180,voice:true,vibrate:true,sound:true}, LS.get('hr2_cfg',{}));
+const st=Object.assign({learned:0,trainCount:0,lastRHR:0,lastRestDay:'',lastTrainEnd:0,restHours:[],labels:[],code:'',codeExp:0}, LS.get('hr2_state',{}));
+const saveCfg=()=>LS.set('hr2_cfg',cfg), saveSt=()=>LS.set('hr2_state',st);
+
+function hrmax(){
+  if(+cfg.hrmaxManual) return {v:+cfg.hrmaxManual,src:'manual'};
+  const t=tanaka(+cfg.age);
+  if(st.learned && (st.trainCount>=5 || st.learned>t)) return {v:st.learned,src:'learned'};
+  return {v:t,src:cfg.age?'formula':'formula – set your age'};
+}
+const restHR=()=>st.lastRHR||60;
+const bounds=()=>zoneBounds(hrmax().v,cfg.zoneMethod,restHR());
+
+/* =================== settings UI =================== */
+const CF=['url','key','interval','age','sex','weight','hrmaxManual','zoneMethod','ceiling','restPos','restDur'];
+function loadSettingsUI(){
+  CF.forEach(k=>$('c_'+k).value=cfg[k]??'');
+  ['voice','vibrate','sound'].forEach(k=>$('c_'+k).checked=!!cfg[k]);
+  const h=hrmax();
+  $('hrmaxInfo').textContent=`HRmax in use: ${h.v} bpm (${h.src}). Learned peak so far: ${st.learned||'none'} · training sessions: ${st.trainCount}`;
+}
+CF.forEach(k=>$('c_'+k).addEventListener('change',()=>{ cfg[k]=$('c_'+k).value.trim(); saveCfg(); loadSettingsUI(); refreshInfo(); }));
+['voice','vibrate','sound'].forEach(k=>$('c_'+k).addEventListener('change',()=>{ cfg[k]=$('c_'+k).checked; saveCfg(); }));
+$('gear').onclick=()=>{ $('settings').classList.toggle('hidden'); loadSettingsUI(); codeStatus(); };
+$('closeSettings').onclick=()=>$('settings').classList.add('hidden');
+function refreshInfo(){
+  const b=bounds(), h=hrmax();
+  $('zoneInfo').textContent=`HRmax ${h.v} (${h.src}) · Z1 ${b[0]}–${b[1]-1} · Z2 ${b[1]}–${b[2]-1} · Z3 ${b[2]}–${b[3]-1} · Z4 ${b[3]}–${b[4]-1} · Z5 ${b[4]}+`;
+  $('rsCfg').textContent=`${cfg.restPos}, ${cfg.restDur/60} min after 2 min quiet rest.`;
+}
+
+/* =================== cues =================== */
+let actx=null;
+function beep(f=880,ms=120){ if(!cfg.sound) return; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+  const o=actx.createOscillator(),g=actx.createGain(); o.frequency.value=f; g.gain.value=0.15; o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+ms/1000);}catch(e){} }
+function vib(p){ if(cfg.vibrate&&navigator.vibrate) try{ navigator.vibrate(p); }catch(e){} }
+function speak(t){ if(!cfg.voice||!window.speechSynthesis) return; try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=1.05; speechSynthesis.speak(u);}catch(e){} }
+let alertTimer=null;
+function raise(msg,{voice=true}={}){
+  const b=$('alertBar'); b.textContent='⚠ '+msg; b.classList.remove('hidden');
+  clearTimeout(alertTimer); alertTimer=setTimeout(()=>b.classList.add('hidden'),8000);
+  vib([300,100,300]); beep(440,300); if(voice) speak(msg); log('ALERT: '+msg);
+  if(rec&&rec.alerts){ rec.alerts.push({t:Date.now(),msg}); if(rec.alerts.length>30) rec.alerts.shift(); }
+}
+
+/* =================== upload queue =================== */
+let queue=LS.get('hr2_q',[]), outbox=LS.get('hr2_ob',[]), sent=0, sending=false, lastFlush=0, liveEnded=null;
+const saveQ=()=>{ LS.set('hr2_q',queue.slice(-30000)); LS.set('hr2_ob',outbox); $('fQueue').textContent=queue.length+outbox.length; $('fSent').textContent=sent; };
+async function post(obj){
+  const r=await fetch(cfg.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({key:cfg.key},obj))});
+  const j=await r.json(); if(!j.ok) throw new Error(j.error||'server error'); return j;
+}
+async function flush(){
+  if(sending||!cfg.url) return;
+  sending=true; lastFlush=Date.now();
+  try{
+    while(outbox.length){ const m=outbox[0]; const j=await post(m); outbox.shift(); saveQ(); onReply(m,j); }
+    const batch=queue.slice(0,800);
+    const live=rec?buildLive():liveEnded;
+    if(batch.length||live){
+      await post({type:'beats',rows:batch,live});
+      queue.splice(0,batch.length); sent+=batch.length; if(!rec) liveEnded=null;
+    }
+    $('fSync').textContent='synced '+new Date().toLocaleTimeString();
+  }catch(e){ $('fSync').textContent='offline – retrying'; log('Upload failed: '+e.message); }
+  sending=false; saveQ();
+}
+setInterval(()=>{
+  const iv=(rec&&rec.mode==='TRAINING')?3000:(+cfg.interval||5)*1000;
+  if(Date.now()-lastFlush>=iv && (queue.length||outbox.length||rec||liveEnded)) flush();
+},1000);
+function onReply(m,j){
+  if(m.type==='resting' && j.readiness){ if(lastRest && lastRest.session===m.result.session){ lastRest.readiness=j.readiness; renderRestResult(lastRest); } }
+}
+
+/* =================== Bluetooth =================== */
+const S={device:null,connected:false,want:false,lastHR:0,lastData:0,contact:'--'};
+function pill(t,c=''){ const p=$('pill'); p.textContent=t; p.className='pill '+c; }
+function parseHR(dv){
+  const f=dv.getUint8(0); let i=1,hr;
+  if(f&1){ hr=dv.getUint16(i,true); i+=2; } else { hr=dv.getUint8(i); i+=1; }
+  const contact=(f&4)?((f&2)?'yes':'no'):'n/a';
+  if(f&8) i+=2;
+  const rr=[]; if(f&16) while(i+1<dv.byteLength){ rr.push(Math.round(dv.getUint16(i,true)*1000/1024)); i+=2; }
+  return {hr,rr,contact};
+}
+async function attach(){
+  pill('Connecting…','warn');
+  const srv=await S.device.gatt.connect();
+  const ch=await (await srv.getPrimaryService('heart_rate')).getCharacteristic('heart_rate_measurement');
+  ch.addEventListener('characteristicvaluechanged',onHR);
+  await ch.startNotifications();
+  try{ const b=await (await srv.getPrimaryService('battery_service')).getCharacteristic('battery_level'); $('batt').textContent=(await b.readValue()).getUint8(0)+'%'; }catch(e){}
+  S.connected=true; pill('Connected','ok'); $('btnConnect').textContent='Disconnect';
+}
+async function onDisconnect(){
+  S.connected=false; pill('Disconnected','warn');
+  if(!S.want) return;
+  if(rec){ if(rec.mode==='RESTING'){ cancelResting('Strap disconnected – reading cancelled'); } else raise('Strap disconnected, reconnecting'); }
+  for(let n=1;S.want&&!S.device.gatt.connected;n++){
+    try{ await attach(); log('Reconnected'); return; }catch(e){ pill('Reconnecting…','warn'); await sleep(Math.min(2000*n,15000)); }
+  }
+}
+$('btnConnect').onclick=async()=>{
+  if(S.connected||S.want&&S.device){ if(rec&&!confirm('A recording is running. Disconnect anyway?')) return; S.want=false; try{S.device.gatt.disconnect();}catch(e){} $('btnConnect').textContent='Connect strap'; pill('Not connected'); return; }
+  if(!navigator.bluetooth){ alert('Web Bluetooth not available. Use Chrome on Android, from an https:// address.'); return; }
+  try{ S.device=await navigator.bluetooth.requestDevice({filters:[{services:['heart_rate']}],optionalServices:['battery_service']}); }
+  catch(e){ log('No device chosen'); return; }
+  S.device.addEventListener('gattserverdisconnected',onDisconnect);
+  S.want=true;
+  try{ await attach(); log('Connected to '+(S.device.name||'HR strap')); }catch(e){ S.want=false; pill('Failed'); log('Connect error: '+e.message); }
+};
+
+function onHR(e){
+  const {hr,rr,contact}=parseHR(e.target.value); const now=Date.now();
+  S.lastHR=hr; S.lastData=now; S.contact=contact;
+  $('bpmSmall').textContent=hr; $('contact').textContent=contact;
+  if(!rec) return;
+  // timestamp each beat inside the packet (last beat ≈ now)
+  let t=now; const times=[]; for(let i=rr.length-1;i>=0;i--){ times[i]=t; t-=rr[i]; }
+  const nn=[]; rr.forEach((v,i)=>rec.clean.push(v,times[i]).forEach(b=>nn.push(b)));
+  queue.push([new Date(now).toISOString(),rec.session,rec.mode,hr,rr.join(' '),contact]);
+  rec.onSample(now,hr,nn,contact);
+  saveQ();
+}
+
+/* =================== recording base =================== */
+let rec=null, wakeLock=null;
+async function wake(){ try{ wakeLock=await navigator.wakeLock.request('screen'); }catch(e){ log('Keep the screen on manually'); } }
+function unwake(){ try{ wakeLock&&wakeLock.release(); }catch(e){} wakeLock=null; }
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&rec) wake();
+  if(document.visibilityState==='hidden'&&rec){ saveQ(); log('Page hidden – recording may pause'); }
+});
+window.addEventListener('pagehide',saveQ);
+
+function baseRec(mode,prefix){
+  return { mode, session:prefix+' '+stamp(), start:Date.now(), clean:new RRClean(), samples:[], nn:[], alerts:[], lastT:0 };
+}
+// data-gap watchdog
+let gapWarned=false;
+setInterval(()=>{
+  if(!rec||!S.connected) return;
+  if(S.lastData && Date.now()-S.lastData>10000){ if(!gapWarned){ gapWarned=true; raise('No data from strap'); } } else gapWarned=false;
+},1000);
+
+function buildLive(){
+  if(!rec) return null;
+  const now=Date.now(), s0=rec.start;
+  const series=rec.samples.filter(p=>p[0]>=now-900000).map(p=>[Math.round((p[0]-s0)/1000),p[1]]);
+  const L={session:rec.session,mode:rec.mode,start:s0,updated:now,hr:S.lastHR,contact:S.contact,connected:S.connected,
+    series,quality:r1(rec.clean.quality()),ectopic:rec.clean.ectopic,hrv:hrvText(rec),alerts:rec.alerts.slice(-10)};
+  if(rec.mode==='TRAINING'||rec.mode==='FREE'){
+    const b=bounds(), h=hrmax();
+    Object.assign(L,{type:rec.type||'',label:rec.label||'',bounds:b,hrmax:h.v,hrmaxSrc:h.src,method:cfg.zoneMethod,
+      zone:zoneOf(S.lastHR,b),elapsed:Math.round((now-s0)/1000),avg:rec.dur?Math.round(rec.hrdt/rec.dur):0,max:rec.max||0,
+      trimp:r1(rec.trimp||0),edwards:r1(edwardsOf(rec.zoneSec||[])),kcal:Math.round(rec.kcal||0),zoneSec:(rec.zoneSec||[]).map(Math.round),
+      sets:(rec.sets||[]).map(s=>({n:s.n,label:s.label,t:Math.round((s.t-s0)/1000),peak:s.peak,end:s.end,hrr30:s.hrr30,hrr60:s.hrr60}))});
+  }
+  if(rec.mode==='RESTING') L.phase=rec.phase;
+  return L;
+}
+
+/* =================== tabs =================== */
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  if(rec){ alert('Finish the current recording first.'); return; }
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('hidden',t.id!=='tab-'+b.dataset.tab));
+  if(b.dataset.tab==='resting'&&lastRest&&lastRest.poincare&&$('poinc')) drawPoincare($('poinc'),lastRest.poincare);
+});
+function showTab(name){ document.querySelector(`.tabs button[data-tab="${name}"]`).click(); }
+function needStrap(){ if(!S.connected){ alert('Connect the strap first.'); return false; } return true; }
+
+/* =================== chart =================== */
+function drawHR(cv,pts,opt={}){
+  const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight; if(!w) return;
+  if(cv.width!==w*dpr){ cv.width=w*dpr; cv.height=h*dpr; }
+  const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,h);
+  if(pts.length<2) return;
+  let lo=Infinity,hi=-Infinity; pts.forEach(p=>{ if(p[1]<lo)lo=p[1]; if(p[1]>hi)hi=p[1]; }); lo-=5; hi+=5;
+  const x0=pts[0][0], x1=pts[pts.length-1][0], X=x=>(x-x0)/((x1-x0)||1)*w, Y=y=>h-(y-lo)/(hi-lo)*h;
+  if(opt.bounds){ for(let z=1;z<=5;z++){ const a=opt.bounds[z-1], b=z<5?opt.bounds[z]:hi+50; if(b<lo||a>hi) continue;
+    g.fillStyle=ZCOL[z]+'22'; g.fillRect(0,Y(Math.min(b,hi)),w,Y(Math.max(a,lo))-Y(Math.min(b,hi))); } }
+  (opt.marks||[]).forEach(m=>{ if(m<x0) return; g.strokeStyle='#ffffff55'; g.setLineDash([3,3]); g.beginPath(); g.moveTo(X(m),0); g.lineTo(X(m),h); g.stroke(); g.setLineDash([]); });
+  g.strokeStyle='#ff4d5e'; g.lineWidth=2; g.beginPath(); pts.forEach((p,i)=>i?g.lineTo(X(p[0]),Y(p[1])):g.moveTo(X(p[0]),Y(p[1]))); g.stroke();
+  g.fillStyle='#8a90a0'; g.font='10px system-ui'; g.fillText(Math.round(hi),2,10); g.fillText(Math.round(lo),2,h-3);
+}
+
+/* =================== TRAINING / FREE engine =================== */
+function edwardsOf(zs){ let s=0; for(let z=1;z<=5;z++) s+=(zs[z]||0)/60*z; return s; }
+function startEffort(mode){
+  const r=baseRec(mode, mode==='TRAINING'?'T':'F');
+  Object.assign(r,{type:$('trType').value,label:$('trLabel').value.trim(),zoneSec:[0,0,0,0,0,0],trimp:0,kcal:0,hrdt:0,dur:0,max:0,
+    sets:[],lastMark:r.start,win:[],peakSus:0,curZone:-1,candZone:-1,candSince:0,ceilSince:0,ceilWarned:0,noContactSince:0});
+  r.onSample=(now,hr,nn,contact)=>{
+    const dt=r.lastT?Math.min(now-r.lastT,5000)/1000:1; r.lastT=now;
+    r.samples.push([now,hr]); nn.forEach(b=>r.nn.push(b));
+    if(r.samples.length>20000) r.samples.shift();
+    const b=bounds(), h=hrmax(), z=zoneOf(hr,b);
+    r.zoneSec[z]+=dt; r.dur+=dt; r.hrdt+=hr*dt; if(hr>r.max) r.max=hr;
+    r.trimp+=banisterRate(hr,restHR(),h.v,cfg.sex)*dt/60;
+    if(+cfg.weight&&+cfg.age) r.kcal+=keytelKcalMin(hr,+cfg.weight,+cfg.age,cfg.sex)*dt/60;
+    // sustained 5-s peak for HRmax learning
+    if(contact!=='no'){ r.win.push([now,hr]); while(r.win.length&&r.win[0][0]<now-5000) r.win.shift();
+      if(r.win.length>2&&r.win[0][0]<=now-4000){ const sus=Math.min(...r.win.map(p=>p[1])); if(sus>r.peakSus&&sus<=230) r.peakSus=sus; } }
+    if(r.mode==='TRAINING'){
+      // zone-change cue (zone must hold 5 s)
+      if(z!==r.candZone){ r.candZone=z; r.candSince=now; }
+      else if(z!==r.curZone&&now-r.candSince>=5000){ const first=r.curZone<0; r.curZone=z; if(!first&&z>0){ speak(`Zone ${z}, ${hr}`); vib(z>=4?[200,80,200]:[150]); } }
+      // ceiling
+      const c=+cfg.ceiling;
+      if(c&&hr>c){ if(!r.ceilSince) r.ceilSince=now; if(now-r.ceilSince>=3000&&now-r.ceilWarned>30000){ r.ceilWarned=now; raise(`Heart rate ${hr}, above ${c}`); } } else r.ceilSince=0;
+      if(contact==='no'){ if(!r.noContactSince) r.noContactSince=now; else if(now-r.noContactSince>5000){ r.noContactSince=now+60000; raise('Strap skin contact lost'); } } else if(r.noContactSince<now) r.noContactSince=0;
+      updateSets(r,now);
+    }
+    renderEffort(r,hr,z,b);
+  };
+  return r;
+}
+function avgBetween(r,a,b){ const v=r.samples.filter(p=>p[0]>=a&&p[0]<=b).map(p=>p[1]); return v.length?mean(v):null; }
+function maxBetween(r,a,b){ const v=r.samples.filter(p=>p[0]>=a&&p[0]<=b).map(p=>p[1]); return v.length?Math.max(...v):null; }
+function updateSets(r,now){
+  let changed=false;
+  r.sets.forEach(s=>{
+    if(s.end==null&&now>=s.t+5000){ s.end=maxBetween(r,s.t-5000,s.t+5000); s.peak=maxBetween(r,s.from,s.t+5000); changed=true; }
+    if(s.hrr30==null&&s.end!=null&&now>=s.t+32000){ const v=avgBetween(r,s.t+28000,s.t+32000); s.hrr30=v==null?'–':Math.round(s.end-v); changed=true; }
+    if(s.hrr60==null&&s.end!=null&&now>=s.t+62000){ const v=avgBetween(r,s.t+58000,s.t+62000); s.hrr60=v==null?'–':Math.round(s.end-v); changed=true; }
+  });
+  if(changed) renderSets(r);
+}
+function renderSets(r){
+  const rows=r.sets.slice().reverse().map(s=>`<tr><td>${s.n}</td><td>${s.label||''}</td><td>${s.peak??'…'}</td><td>${s.hrr30??'…'}</td><td>${s.hrr60??'…'}</td></tr>`).join('');
+  $('setTable').innerHTML=r.sets.length?`<tr><th>#</th><th>Exercise</th><th>Peak</th><th>HRR30</th><th>HRR60</th></tr>`+rows:'';
+  $('sSets').textContent=r.sets.length;
+}
+function hrvText(r){ const h=liveRMSSD(r.nn.slice(-200),Date.now()); return !h?'…':h.rmssd==null?'noisy':Math.round(h.rmssd); }
+function renderEffort(r,hr,z,b){
+  if(r.mode==='FREE'){ $('frBpm').textContent=hr; $('frInfo').textContent=`Recording · HRV (RMSSD 60 s) ${hrvText(r)} ms · quality ${Math.round(r.clean.quality())}%`;
+    drawHR($('frChart'),r.samples.slice(-600).map(p=>[p[0]/1000,p[1]])); return; }
+  $('sHrv').textContent=hrvText(r); $('sQual').textContent=Math.round(r.clean.quality())+'%'; $('sEct').textContent=r.clean.ectopic;
+  $('trBpm').textContent=hr; $('trBpm').style.color=ZCOL[z];
+  $('trZone').textContent=z?`Zone ${z} · ${Math.round(hr/hrmax().v*100)}% HRmax`:'Below zone 1';
+  [...$('zbar').children].forEach((el,i)=>el.classList.toggle('on',i+1===z));
+  $('sElapsed').textContent=fmt((Date.now()-r.start)/1000);
+  $('sAvg').textContent=r.dur?Math.round(r.hrdt/r.dur):'--'; $('sMax').textContent=r.max||'--';
+  $('sTrimp').textContent=Math.round(r.trimp); $('sKcal').textContent=(+cfg.weight&&+cfg.age)?Math.round(r.kcal):'set profile';
+  const tot=r.zoneSec.reduce((a,v)=>a+v,0)||1;
+  $('zoneTimes').innerHTML=[5,4,3,2,1].map(k=>`<span>Z${k}</span><div class="bar" style="background:${ZCOL[k]};width:${Math.max(2,r.zoneSec[k]/tot*100)}%"></div><span>${fmt(r.zoneSec[k])}</span>`).join('');
+  drawHR($('trChart'),r.samples.filter(p=>p[0]>=Date.now()-900000).map(p=>[p[0]/1000,p[1]]),{bounds:b,marks:r.sets.map(s=>s.t/1000)});
+}
+
+$('trStart').onclick=()=>{
+  if(!needStrap()) return;
+  beep(660,60);
+  rec=startEffort('TRAINING'); liveEnded=null;
+  $('trIdle').classList.add('hidden'); $('trSummary').classList.add('hidden'); $('trLive').classList.remove('hidden');
+  $('setTable').innerHTML=''; $('sSets').textContent='0';
+  $('labelList').innerHTML=st.labels.map(l=>`<option value="${l.replace(/"/g,'&quot;')}">`).join('');
+  wake(); speak('Training started'); log('Training started – '+rec.session); flush();
+};
+$('setDone').onclick=()=>{
+  if(!rec||rec.mode!=='TRAINING') return;
+  const now=Date.now(), label=$('setLabel').value.trim();
+  rec.sets.push({n:rec.sets.length+1,label,t:now,from:rec.lastMark,peak:null,end:null,hrr30:null,hrr60:null});
+  rec.lastMark=now; vib(80); beep(990,80);
+  if(label&&!st.labels.includes(label)){ st.labels.unshift(label); st.labels=st.labels.slice(0,30); saveSt(); }
+  renderSets(rec);
+};
+$('trEnd').onclick=()=>{ if(confirm('End training session?')) endTraining(); };
+
+function endTraining(){
+  const r=rec, end=Date.now(); rec=null; unwake();
+  updateSets(r,end+999999);   // finalise what can be finalised
+  r.sets.forEach(s=>{ if(s.end==null){ s.end=maxBetween(r,s.t-5000,end); s.peak=maxBetween(r,s.from,end); } });
+  const h=hrmax(), durMin=(end-r.start)/60000;
+  // cardiac drift (Cardio only): exclude first 10 & last 5 min, need ≥20 min steady
+  let drift='';
+  if(r.type==='Cardio'){ const a=r.start+600000, b=end-300000;
+    if(b-a>=1200000){ const mid=(a+b)/2, m1=avgBetween(r,a,mid), m2=avgBetween(r,mid,b); if(m1&&m2) drift=r1((m2-m1)/m1*100); } }
+  const summary={session:r.session,start:new Date(r.start).toISOString(),type:r.type,label:r.label,durMin:r1(durMin),
+    avg:r.dur?Math.round(r.hrdt/r.dur):0,max:r.max,zoneMin:r.zoneSec.slice(1).map(s=>r1(s/60)),trimp:r1(r.trimp),edwards:r1(edwardsOf(r.zoneSec)),
+    kcal:(+cfg.weight&&+cfg.age)?Math.round(r.kcal):'',sets:r.sets.length,drift,quality:r1(r.clean.quality()),ectopic:r.clean.ectopic,
+    hrmax:h.v,hrmaxSrc:h.src,method:cfg.zoneMethod==='hrr'?'HR reserve':'% HRmax'};
+  const sets=r.sets.map(s=>({n:s.n,label:s.label,t:new Date(s.t).toISOString(),peak:s.peak,end:s.end,hrr30:s.hrr30,hrr60:s.hrr60}));
+  outbox.push({type:'training',summary,sets});
+  r.alerts.push({t:end,msg:'Session ended'});
+  liveEnded=Object.assign(buildLiveFrom(r),{ended:true});
+  // HRmax learning
+  st.trainCount++; st.lastTrainEnd=end;
+  if(r.peakSus){
+    if(+cfg.hrmaxManual){ if(r.peakSus>+cfg.hrmaxManual && confirm(`New sustained peak ${r.peakSus} bpm is above your manual HRmax ${cfg.hrmaxManual}. Update HRmax to ${r.peakSus}?`)){ cfg.hrmaxManual=String(r.peakSus); saveCfg(); } }
+    else if(r.peakSus>st.learned) st.learned=r.peakSus;
+  }
+  saveSt(); refreshInfo(); flush();
+  speak('Session ended');
+  $('trLive').classList.add('hidden'); $('trIdle').classList.remove('hidden');
+  const s=summary, zrow=s.zoneMin.map((m,i)=>`<td style="color:${ZCOL[i+1]}">${m}</td>`).join('');
+  $('trSummary').innerHTML=`<div class="card"><b>Session summary</b> <span class="mut small">${s.session}</span>
+    <div class="grid3" style="margin-top:10px">
+      <div class="stat"><b>${fmt(s.durMin*60)}</b><span>Duration</span></div><div class="stat"><b>${s.avg}</b><span>Avg HR</span></div><div class="stat"><b>${s.max}</b><span>Max HR</span></div>
+      <div class="stat"><b>${Math.round(s.trimp)}</b><span>TRIMP (Banister)</span></div><div class="stat"><b>${Math.round(s.edwards)}</b><span>TRIMP (Edwards)</span></div><div class="stat"><b>${s.kcal||'–'}</b><span>kcal</span></div>
+      <div class="stat"><b>${s.drift===''?'–':s.drift+'%'}</b><span>HR drift</span></div><div class="stat"><b>${s.quality}%</b><span>Signal quality</span></div><div class="stat"><b>${s.ectopic}</b><span>Ectopic beats</span></div>
+    </div>
+    <table><tr><th>Min in</th><th></th><th>Z1</th><th>Z2</th><th>Z3</th><th>Z4</th><th>Z5</th></tr><tr><td>zones</td><td></td>${zrow}</tr></table>
+    ${sets.length?`<table><tr><th>#</th><th>Exercise</th><th>Peak</th><th>HRR30</th><th>HRR60</th></tr>${sets.map(x=>`<tr><td>${x.n}</td><td>${x.label||''}</td><td>${x.peak??'–'}</td><td>${x.hrr30??'–'}</td><td>${x.hrr60??'–'}</td></tr>`).join('')}</table>`:''}
+    <p class="small mut">HRmax ${s.hrmax} (${s.hrmaxSrc}) · zones by ${s.method}${s.type==='Cardio'&&s.drift===''?' · drift needs ≥35 min of cardio':''}</p></div>`;
+  $('trSummary').classList.remove('hidden');
+}
+function buildLiveFrom(r){ const keep=rec; rec=r; const L=buildLive(); rec=keep; return L; }
+
+/* free log */
+$('frStart').onclick=()=>{
+  if(!needStrap()) return;
+  rec=startEffort('FREE'); liveEnded=null; wake();
+  $('frStart').classList.add('hidden'); $('frStop').classList.remove('hidden'); $('frInfo').textContent='Recording – '+rec.session; flush();
+};
+$('frStop').onclick=()=>{
+  const r=rec; rec=null; unwake();
+  if(r.peakSus&&!+cfg.hrmaxManual&&r.peakSus>st.learned){ st.learned=r.peakSus; saveSt(); }
+  liveEnded=Object.assign(buildLiveFrom(r),{ended:true}); flush();
+  $('frStart').classList.remove('hidden'); $('frStop').classList.add('hidden'); $('frInfo').textContent='Stopped – '+Math.round(r.dur/60)+' min logged';
+};
+
+/* =================== RESTING =================== */
+let lastRest=LS.get('hr2_lastRest',null), rsTimer=null;
+const QUIET=120;
+$('rsStart').onclick=()=>{
+  if(!needStrap()) return;
+  if(st.lastTrainEnd&&Date.now()-st.lastTrainEnd<7200000&&!confirm('You trained less than 2 hours ago – heart rate may still be raised. Take the reading anyway?')) return;
+  beep(660,60);
+  rec=baseRec('RESTING','R'); liveEnded=null;
+  Object.assign(rec,{phase:'quiet',quietEnd:Date.now()+QUIET*1000,dur:+cfg.restDur,recStart:0,recEnd:0});
+  rec.onSample=(now,hr,nn)=>{ rec.samples.push([now,hr]); nn.forEach(b=>rec.nn.push(b)); $('rsHr').textContent=hr; $('rsHrv').textContent=hrvText(rec); };
+  $('rsIdle').classList.add('hidden'); $('rsResult').classList.add('hidden'); $('rsRun').classList.remove('hidden'); $('rsSkip').classList.remove('hidden');
+  $('prompt').classList.add('hidden');
+  wake(); rsTimer=setInterval(restTick,250); restTick();
+};
+$('rsSkip').onclick=()=>{ if(rec&&rec.phase==='quiet') rec.quietEnd=Date.now(); };
+$('rsCancel').onclick=()=>cancelResting('Reading cancelled');
+function restTick(){
+  const r=rec; if(!r||r.mode!=='RESTING') return; const now=Date.now();
+  if(r.phase==='quiet'){
+    const left=(r.quietEnd-now)/1000; $('rsPhase').textContent='Quiet rest before reading'; $('rsTimer').textContent=fmt(left);
+    $('rsProg').style.width=(100-left/QUIET*100)+'%';
+    if(left<=0){ r.phase='record'; r.recStart=now; r.recEnd=now+r.dur*1000; beep(880,150); vib(150); $('rsSkip').classList.add('hidden'); log('Resting reading started'); }
+  } else {
+    const left=(r.recEnd-now)/1000; $('rsPhase').textContent=`Recording (${cfg.restPos.toLowerCase()}) – first minute settles`; $('rsTimer').textContent=fmt(left);
+    $('rsProg').style.width=(100-left/r.dur*100)+'%';
+    if(left<=0) finishResting();
+  }
+}
+function cancelResting(msg){
+  clearInterval(rsTimer); if(rec&&rec.mode==='RESTING'){ const r=rec; rec=null; liveEnded=Object.assign(buildLiveFrom(r),{ended:true}); }
+  unwake(); $('rsRun').classList.add('hidden'); $('rsIdle').classList.remove('hidden'); log(msg); if(msg) alert(msg);
+}
+function finishResting(){
+  clearInterval(rsTimer); const r=rec; rec=null; unwake(); beep(880,300); vib([150,80,150]);
+  $('rsRun').classList.add('hidden'); $('rsIdle').classList.remove('hidden');
+  const win=r.nn.filter(b=>b.t>=r.recStart+60000&&b.t<=r.recEnd);
+  const flagged=win.filter(b=>b.flag).length, quality=win.length?100*(1-flagged/win.length):0;
+  const m=hrvMetrics(win.map(b=>b.nn));
+  liveEnded=Object.assign(buildLiveFrom(r),{ended:true});
+  if(!m){ alert('Not enough clean beats recorded. Check strap contact and try again.'); return; }
+  const now=new Date(), hour=now.getHours()+now.getMinutes()/60;
+  const hrs=st.restHours.slice().sort((a,b)=>a-b), med=hrs.length?hrs[hrs.length>>1]:null;
+  const unusual=hrs.length>=5&&Math.abs(hour-med)>3;
+  st.restHours.push(hour); st.restHours=st.restHours.slice(-14);
+  const hm=hrmax(), rhr=Math.round(m.hr);
+  const res={session:r.session,time:now.toISOString(),position:cfg.restPos,durMin:r.dur/60,rhr,lnrmssd:r2(m.lnrmssd),rmssd:r1(m.rmssd),
+    sdnn:r1(m.sdnn),pnn50:r1(m.pnn50),sd1:r1(m.sd1),sd2:r1(m.sd2),meanNN:Math.round(m.meanNN),beats:m.beats,quality:r1(quality),
+    ectopic:Math.floor(win.filter(b=>b.flag===2).length/2),hrmax:hm.v,hrmaxSrc:hm.src,vo2:r1(uthVO2(hm.v,rhr)),
+    note:(unusual?'Unusual time of day':'')+(quality<90?(unusual?'; ':'')+'Low quality – HRV not reliable':''),
+    poincare:win.slice(1).map((b,i)=>[win[i].nn,b.nn])};
+  if(quality<90){ res.lnrmssd=''; res.rmssd=''; res.sdnn=''; res.pnn50=''; res.sd1=''; res.sd2=''; }
+  if(quality>=95){ st.lastRHR=rhr; }
+  st.lastRestDay=dayKey(); saveSt(); refreshInfo();
+  const {poincare,...toSend}=res; outbox.push({type:'resting',result:toSend}); flush();
+  lastRest=res; LS.set('hr2_lastRest',res); renderRestResult(res);
+}
+function renderRestResult(r){
+  const rd=r.readiness, cls=rd&&['Green','Amber','Red'].includes(rd.status)?rd.status:'Other';
+  const rdTxt=rd?`<span class="light ${cls}">${rd.status}</span>
+     ${rd.roll7!=null&&rd.roll7!==''?`<div class="small mut" style="margin-top:6px">7-day lnRMSSD ${rd.roll7} · normal ${rd.low}–${rd.high} · baseline RHR ${rd.rhrBase}</div>`:''}`
+     :`<span class="light Other">Readiness: waiting for upload</span>`;
+  const hv=v=>v===''||v==null?'–':v;
+  $('rsResult').innerHTML=`<div class="card"><div class="row"><b>Resting result</b><span class="small mut">${new Date(r.time).toLocaleString()}</span></div>
+    <div style="margin:10px 0">${rdTxt}</div>
+    <div class="grid3">
+      <div class="stat"><b>${r.rhr}</b><span>Resting HR</span></div><div class="stat"><b>${hv(r.lnrmssd)}</b><span>lnRMSSD</span></div><div class="stat"><b>${hv(r.rmssd)}</b><span>RMSSD ms</span></div>
+      <div class="stat"><b>${hv(r.sdnn)}</b><span>SDNN ms</span></div><div class="stat"><b>${hv(r.pnn50)}</b><span>pNN50 %</span></div><div class="stat"><b>${hv(r.sd1)}/${hv(r.sd2)}</b><span>SD1/SD2</span></div>
+      <div class="stat"><b>${r.vo2}</b><span>VO2max (Uth)</span></div><div class="stat"><b>${r.quality}%</b><span>Quality</span></div><div class="stat"><b>${r.ectopic}</b><span>Ectopics</span></div>
+    </div>
+    ${r.poincare?'<canvas id="poinc" style="width:100%;height:240px"></canvas><p class="small mut" style="text-align:center">Poincaré plot – RR(n) vs RR(n+1), ms</p>':''}
+    <p class="small mut">${r.position} · ${r.beats} beats analysed · HRmax ${r.hrmax} (${r.hrmaxSrc})${r.note?' · '+r.note:''}</p></div>`;
+  $('rsResult').classList.remove('hidden');
+  if(r.poincare) drawPoincare($('poinc'),r.poincare);
+  renderToday();
+}
+function readinessLabel(rd){
+  if(!rd) return {cls:'Other',txt:'Readiness pending upload',hint:''};
+  const m=/^Baseline (\d+)\/14/.exec(rd.status||'');
+  if(m) return {cls:'Other',txt:`Building baseline ${m[1]}/14`,hint:`Readiness light unlocks after 14 days of resting readings – ${14-+m[1]} to go.`};
+  if(rd.status==='Low quality') return {cls:'Other',txt:'Low-quality reading',hint:'Too many artifacts today – moisten the strap and repeat.'};
+  const hint={Green:'Normal range – train as planned.',Amber:'Slightly off baseline – consider lighter training.',Red:'Well below baseline – recovery day advised.'}[rd.status]||'';
+  return {cls:rd.status,txt:'Readiness: '+rd.status,hint};
+}
+function renderToday(){
+  const r=lastRest, el=$('today');
+  if(!r){ el.innerHTML=`<b>Today</b><p class="small mut" style="margin:6px 0 0">HRV, readiness and VO2max come from a <b>resting reading</b> (2 min quiet + 3 min recording).
+      The readiness light unlocks after 14 days of readings.</p><button class="big" onclick="showTab('resting')">Take resting reading</button>`; return; }
+  const when=new Date(r.time), days=Math.round((new Date(dayKey())-new Date(dayKey(when)))/864e5);
+  const ago=days===0?'today '+when.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):days===1?'yesterday':days+' days ago';
+  const L=readinessLabel(r.readiness), hv=v=>v===''||v==null?'–':v;
+  el.innerHTML=`<div class="row"><b>Today</b><span class="small mut">reading ${ago}</span></div>
+    <div style="margin:8px 0"><span class="light ${L.cls}">${L.txt}</span>${L.hint?`<div class="small mut" style="margin-top:6px">${L.hint}</div>`:''}</div>
+    <div class="grid3" style="margin:0">
+      <div class="stat"><b>${hv(r.lnrmssd)}</b><span>lnRMSSD</span></div><div class="stat"><b>${hv(r.rmssd)}</b><span>HRV · RMSSD ms</span></div><div class="stat"><b>${r.rhr}</b><span>Resting HR</span></div>
+      <div class="stat"><b>${hv(r.sdnn)}</b><span>SDNN ms</span></div><div class="stat"><b>${r.vo2}</b><span>VO2max (Uth)</span></div><div class="stat"><b>${r.quality}%</b><span>Quality</span></div>
+    </div>
+    ${days>0?`<button class="big" onclick="showTab('resting')">Take today's reading</button>`:`<button class="small sec" style="margin-top:8px;width:100%" onclick="showTab('resting')">Full HRV details & Poincaré plot</button>`}`;
+}
+function drawPoincare(cv,pts){
+  const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight; cv.width=w*dpr; cv.height=h*dpr;
+  const g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0);
+  const all=pts.flat(), lo=Math.min(...all)-20, hi=Math.max(...all)+20, s=Math.min(w,h), ox=(w-s)/2;
+  const P=v=>(v-lo)/(hi-lo)*s;
+  g.strokeStyle='#2a2f3a'; g.strokeRect(ox,0,s,s); g.beginPath(); g.moveTo(ox,s); g.lineTo(ox+s,0); g.stroke();
+  g.fillStyle='#ff4d5ebb'; pts.forEach(p=>{ g.beginPath(); g.arc(ox+P(p[0]),s-P(p[1]),2.5,0,7); g.fill(); });
+  g.fillStyle='#8a90a0'; g.font='10px system-ui'; g.fillText(Math.round(lo),ox+2,s-3); g.fillText(Math.round(hi),ox+s-24,s-3);
+}
+
+/* readiness prompt */
+$('promptGo').onclick=()=>{ $('prompt').classList.add('hidden'); showTab('resting'); };
+$('promptLater').onclick=()=>$('prompt').classList.add('hidden');
+
+/* =================== trainer access code =================== */
+$('codeGen').onclick=()=>{ const a=new Uint32Array(1); crypto.getRandomValues(a); $('codeInput').value=String(a[0]%1000000).padStart(6,'0'); };
+$('codeHours').onchange=()=>$('codeCustom').classList.toggle('hidden',$('codeHours').value!=='custom');
+function showCode(){
+  const active=st.code&&st.codeExp>Date.now();
+  $('codeActive').classList.toggle('hidden',!active);
+  if(active){ $('codeShow').textContent=st.code; $('codeStatus').textContent='Trainer access active until '+new Date(st.codeExp).toLocaleString(); }
+}
+async function codeStatus(){
+  showCode(); if(!cfg.url||!cfg.key) return;
+  try{ const j=await post({type:'status'});
+    if(!j.active){ $('codeStatus').textContent='No active trainer code.'; st.codeExp=0; saveSt(); $('codeActive').classList.add('hidden'); }
+    else { st.codeExp=j.exp; saveSt(); showCode(); }
+  }catch(e){ $('codeStatus').textContent='Could not reach server: '+e.message; }
+}
+$('codeSet').onclick=async()=>{
+  const code=$('codeInput').value.trim();
+  const hours=$('codeHours').value==='custom'?+$('codeCustom').value:+$('codeHours').value;
+  if(code.length<4){ alert('Code must be at least 4 characters.'); return; }
+  if(!(hours>0)){ alert('Enter a valid number of hours.'); return; }
+  if(!cfg.url||!cfg.key){ alert('Set the Apps Script URL and write key first.'); return; }
+  try{ const j=await post({type:'setCode',code,hours}); st.code=code; st.codeExp=j.exp; saveSt(); showCode(); $('codeInput').value=''; log('Trainer code active for '+hours+' h'); }
+  catch(e){ alert('Failed: '+e.message); }
+};
+$('codeRevoke').onclick=async()=>{
+  if(!confirm('Revoke trainer access now?')) return;
+  try{ await post({type:'revoke'}); st.code=''; st.codeExp=0; saveSt(); showCode(); $('codeStatus').textContent='Access revoked.'; }catch(e){ alert('Failed: '+e.message); }
+};
+$('codeCopy').onclick=()=>{ navigator.clipboard?.writeText(st.code).then(()=>log('Code copied')); };
+$('codeShareLink').onclick=()=>{
+  const text='Live heart-rate dashboard. Open the link and enter the access code I send you.';
+  if(navigator.share) navigator.share({title:'HR live',text,url:cfg.url}).catch(()=>{});
+  else navigator.clipboard?.writeText(cfg.url).then(()=>alert('Link copied'));
+};
+
+/* =================== init =================== */
+refreshInfo(); saveQ();
+if(!cfg.url||!cfg.key){ $('settings').classList.remove('hidden'); loadSettingsUI(); }
+if(st.lastRestDay!==dayKey()) $('prompt').classList.remove('hidden');
+if(lastRest) renderRestResult(lastRest); else renderToday();
+if(queue.length||outbox.length) log((queue.length+outbox.length)+' unsent items from last time – uploading');
+</script>
+</body>
+</html>
